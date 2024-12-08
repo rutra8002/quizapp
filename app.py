@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect, text
 import random
 
 app = Flask(__name__)
@@ -29,17 +30,28 @@ def load_questions():
 
 @app.route('/')
 def index():
+    inspector = inspect(db.engine)
+    table_names = inspector.get_table_names()
+    return render_template('index.html', table_names=table_names)
+
+@app.route('/quiz/<table_name>')
+def quiz(table_name):
+    global questions_list, questions_loaded
+    if not questions_loaded:
+        questions_list = db.session.execute(text(f'SELECT * FROM {table_name}')).fetchall()
+        questions_loaded = True
     total_questions = len(questions_list)
     if total_questions == 0:
         return redirect(url_for('quiz_completed'))
     question = random.choice(questions_list)
-    return render_template('index.html', question=question.question, correct_answers=correct_answers, total_questions=total_questions)
+    return render_template('quiz.html', question=question.question, table_name=table_name, correct_answers=correct_answers, total_questions=total_questions)
 
 @app.route('/answer', methods=['POST'])
 def answer():
     global correct_answers, wrong_answers, questions_list
     question_text = request.form['question']
     answer_text = request.form['answer']
+    table_name = request.form['table_name']
     question = next((q for q in questions_list if q.question == question_text), None)
     if question:
         if question.answer == answer_text:
@@ -50,7 +62,7 @@ def answer():
 
     if len(questions_list) == 0:
         return redirect(url_for('quiz_completed'))
-    return redirect(url_for('index'))
+    return redirect(url_for('quiz', table_name=table_name))
 
 @app.route('/end_screen')
 def quiz_completed():

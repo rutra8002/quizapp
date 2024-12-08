@@ -2,30 +2,18 @@
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <title>Question</title>
+    <title>Select Database</title>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .stats {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-    </style>
 </head>
 <body>
-    <div class="stats">
-        <div class="badge badge-primary">Correct Answers: {{ correct_answers }} / {{ total_questions }}</div>
-    </div>
     <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold">{{ question }}</h1>
-        {% if question != "No more questions!" %}
-        <form action="{{ url_for('answer') }}" method="post" class="mt-4">
-            <input type="hidden" name="question" value="{{ question }}">
-            <input type="text" name="answer" placeholder="Your answer" class="input input-bordered w-full max-w-xs">
-            <button type="submit" class="btn btn-primary mt-2">Submit</button>
-        </form>
-        {% endif %}
+        <h1 class="text-2xl font-bold">Select a Database</h1>
+        <ul>
+            {% for table_name in table_names %}
+                <li><a href="{{ url_for('quiz', table_name=table_name) }}" class="link link-primary">{{ table_name }}</a></li>
+            {% endfor %}
+        </ul>
     </div>
 </body>
 </html>
