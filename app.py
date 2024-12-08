@@ -106,6 +106,17 @@ def add_question(table_name):
     db.session.commit()
     return redirect(url_for('edit_table', table_name=table_name))
 
+@app.route('/admin/edit_question/<table_name>/<int:question_id>', methods=['GET', 'POST'])
+def edit_question(table_name, question_id):
+    if request.method == 'POST':
+        new_question = request.form['question']
+        new_answer = request.form['answer']
+        db.session.execute(text(f'UPDATE {table_name} SET question = :question, answer = :answer WHERE id = :id'), {'question': new_question, 'answer': new_answer, 'id': question_id})
+        db.session.commit()
+        return redirect(url_for('edit_table', table_name=table_name))
+    question = db.session.execute(text(f'SELECT * FROM {table_name} WHERE id = :id'), {'id': question_id}).fetchone()
+    return render_template('edit_question.html', table_name=table_name, question=question)
+
 @app.route('/admin/delete_question/<table_name>/<int:question_id>', methods=['POST'])
 def delete_question(table_name, question_id):
     db.session.execute(text(f'DELETE FROM {table_name} WHERE id = :id'), {'id': question_id})
