@@ -32,6 +32,12 @@ def load_questions():
 
 @app.route('/')
 def index():
+    global questions_list, questions_loaded, correct_answers, wrong_answers, user_answers
+    questions_list = []
+    questions_loaded = False
+    correct_answers = 0
+    wrong_answers = 0
+    user_answers = []
     inspector = inspect(db.engine)
     table_names = inspector.get_table_names()
     return render_template('index.html', table_names=table_names)
