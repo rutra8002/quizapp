@@ -7,6 +7,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///questions.db'
 db = SQLAlchemy(app)
 
 class Question(db.Model):
+    __tablename__ = 'geography'
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.String(200), nullable=False)
     answer = db.Column(db.String(200), nullable=False)
