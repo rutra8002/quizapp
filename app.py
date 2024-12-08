@@ -66,7 +66,7 @@ def answer():
 @app.route('/end_screen')
 def quiz_completed():
     total_attempts = correct_answers + wrong_answers
-    correct_percentage = (correct_answers / total_attempts) * 100 if total_attempts > 0 else 0
+    correct_percentage = round((correct_answers / total_attempts) * 100, 2) if total_attempts > 0 else 0
     wrong_percentage = (wrong_answers / total_attempts) * 100 if total_attempts > 0 else 0
     inspector = inspect(db.engine)
     table_names = inspector.get_table_names()
