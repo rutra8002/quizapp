@@ -8,12 +8,17 @@
 </head>
 <body>
     <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold">Select a Database</h1>
-        <ul>
+        <h1 class="text-2xl font-bold mb-4">Select a Database</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for table_name in table_names %}
-                <li><a href="{{ url_for('quiz', table_name=table_name) }}" class="link link-primary">{{ table_name }}</a></li>
+                <div class="card shadow-lg">
+                    <div class="card-body">
+                        <h2 class="card-title">{{ table_name }}</h2>
+                        <a href="{{ url_for('quiz', table_name=table_name) }}" class="btn btn-primary mt-2">Start Quiz</a>
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     </div>
 </body>
 </html>

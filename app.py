@@ -21,6 +21,8 @@ wrong_answers = 0
 questions_list = []
 questions_loaded = False
 
+user_answers = []
+
 @app.before_request
 def load_questions():
     global questions_list, questions_loaded
@@ -48,12 +50,13 @@ def quiz(table_name):
 
 @app.route('/answer', methods=['POST'])
 def answer():
-    global correct_answers, wrong_answers, questions_list
+    global correct_answers, wrong_answers, questions_list, user_answers
     question_text = request.form['question']
     answer_text = request.form['answer']
     table_name = request.form['table_name']
     question = next((q for q in questions_list if q.question == question_text), None)
     if question:
+        user_answers.append(answer_text)
         if question.answer == answer_text:
             correct_answers += 1
         else:
@@ -69,7 +72,8 @@ def quiz_completed():
     total_attempts = correct_answers + wrong_answers
     correct_percentage = (correct_answers / total_attempts) * 100 if total_attempts > 0 else 0
     wrong_percentage = (wrong_answers / total_attempts) * 100 if total_attempts > 0 else 0
-    return render_template('quiz_completed.html', correct_percentage=correct_percentage, wrong_percentage=wrong_percentage)
+    all_questions = Question.query.all()
+    return render_template('quiz_completed.html', correct_percentage=correct_percentage, wrong_percentage=wrong_percentage, all_questions=all_questions, user_answers=user_answers, zip=zip)
 
 if __name__ == '__main__':
     app.run()

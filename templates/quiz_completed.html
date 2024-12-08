@@ -11,6 +11,24 @@
         <h1 class="text-2xl font-bold">Quiz Completed</h1>
         <p>Correct Answers: {{ correct_percentage }}%</p>
         <div class="radial-progress" style="--value:{{ correct_percentage }};" role="progressbar">{{ correct_percentage }}%</div>
+
+        <h2 class="text-xl font-bold mt-4">All Questions and Answers</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for question, user_answer in zip(all_questions, user_answers) %}
+                <div class="card shadow-lg">
+                    <div class="card-body">
+                        <h2 class="card-title">Question</h2>
+                        <p>{{ question.question }}</p>
+                        <h2 class="card-title">Your Answer</h2>
+                        <p>{{ user_answer }}</p>
+                        <h2 class="card-title">Correct Answer</h2>
+                        <p>{{ question.answer }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <a href="{{ url_for('index') }}" class="btn btn-primary mt-4">Retry</a>
     </div>
 </body>
 </html>
