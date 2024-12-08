@@ -3,13 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <title>Question</title>
+    <style>
+        .stats {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
 </head>
 <body>
+    <div class="stats">
+        Correct Answers: {{ correct_answers }} / {{ total_questions }}
+    </div>
     <h1>{{ question }}</h1>
+    {% if question != "No more questions!" %}
     <form action="{{ url_for('answer') }}" method="post">
         <input type="hidden" name="question" value="{{ question }}">
         <input type="text" name="answer" placeholder="Your answer">
         <button type="submit">Submit</button>
     </form>
+    {% endif %}
 </body>
 </html>
