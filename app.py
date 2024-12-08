@@ -7,15 +7,6 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///questions.db'
 db = SQLAlchemy(app)
 
-class Question(db.Model):
-    __tablename__ = 'geography'
-    id = db.Column(db.Integer, primary_key=True)
-    question = db.Column(db.String(200), nullable=False)
-    answer = db.Column(db.String(200), nullable=False)
-
-with app.app_context():
-    db.create_all()
-
 correct_answers = 0
 wrong_answers = 0
 questions_list = []
@@ -23,12 +14,11 @@ questions_loaded = False
 
 user_answers = []
 
-@app.before_request
-def load_questions():
-    global questions_list, questions_loaded
-    if not questions_loaded:
-        questions_list = Question.query.all()
-        questions_loaded = True
+class Question:
+    def __init__(self, id, question, answer):
+        self.id = id
+        self.question = question
+        self.answer = answer
 
 @app.route('/')
 def index():
@@ -45,10 +35,9 @@ def index():
 @app.route('/quiz/<table_name>')
 def quiz(table_name):
     global questions_list, questions_loaded
-    questions_list = []
-    questions_loaded = False
-    questions_list = db.session.execute(text(f'SELECT * FROM {table_name}')).fetchall()
-    questions_loaded = True
+    if not questions_loaded:
+        questions_list = db.session.execute(text(f'SELECT * FROM {table_name}')).fetchall()
+        questions_loaded = True
     total_questions = len(questions_list)
     if total_questions == 0:
         return redirect(url_for('quiz_completed'))
@@ -79,7 +68,13 @@ def quiz_completed():
     total_attempts = correct_answers + wrong_answers
     correct_percentage = (correct_answers / total_attempts) * 100 if total_attempts > 0 else 0
     wrong_percentage = (wrong_answers / total_attempts) * 100 if total_attempts > 0 else 0
-    all_questions = Question.query.all()
+    inspector = inspect(db.engine)
+    table_names = inspector.get_table_names()
+    all_questions = []
+    for table_name in table_names:
+        questions = db.session.execute(text(f'SELECT * FROM {table_name}')).fetchall()
+        for q in questions:
+            all_questions.append(Question(q.id, q.question, q.answer))
     return render_template('quiz_completed.html', correct_percentage=correct_percentage, wrong_percentage=wrong_percentage, all_questions=all_questions, user_answers=user_answers, zip=zip)
 
 
