@@ -22,7 +22,7 @@ wrong_answers = 0
 def index():
     total_questions = Question.query.count()
     if total_questions == 0:
-        return redirect(url_for('end_screen'))
+        return redirect(url_for('quiz_completed'))
     question = random.choice(Question.query.all())
     return render_template('index.html', question=question.question, correct_answers=correct_answers, total_questions=total_questions)
 
@@ -41,15 +41,15 @@ def answer():
         db.session.commit()
 
     if Question.query.count() == 0:
-        return redirect(url_for('end_screen'))
+        return redirect(url_for('quiz_completed'))
     return redirect(url_for('index'))
 
 @app.route('/end_screen')
-def end_screen():
+def quiz_completed():
     total_attempts = correct_answers + wrong_answers
     correct_percentage = (correct_answers / total_attempts) * 100 if total_attempts > 0 else 0
     wrong_percentage = (wrong_answers / total_attempts) * 100 if total_attempts > 0 else 0
-    return render_template('end_screen.html', correct_percentage=correct_percentage, wrong_percentage=wrong_percentage)
+    return render_template('quiz_completed.html', correct_percentage=correct_percentage, wrong_percentage=wrong_percentage)
 
 if __name__ == '__main__':
     app.run()
