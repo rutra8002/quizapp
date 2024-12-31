@@ -52,7 +52,7 @@ def answer():
     table_name = request.form['table_name']
     question = next((q for q in questions_list if q.question == question_text), None)
     if question:
-        user_answers.append(answer_text)
+        user_answers.append({'question': question_text, 'answer': answer_text})
         if question.answer == answer_text:
             correct_answers += 1
         else:
@@ -75,8 +75,13 @@ def quiz_completed():
         questions = db.session.execute(text(f'SELECT * FROM {table_name}')).fetchall()
         for q in questions:
             all_questions.append(Question(q.id, q.question, q.answer))
-    return render_template('quiz_completed.html', correct_percentage=correct_percentage, wrong_percentage=wrong_percentage, all_questions=all_questions, user_answers=user_answers, zip=zip)
 
+    # Sort user_answers based on the order of all_questions
+    sorted_user_answers = [next(ua['answer'] for ua in user_answers if ua['question'] == q.question) for q in all_questions]
+
+    return render_template('quiz_completed.html', correct_percentage=correct_percentage,
+                           wrong_percentage=wrong_percentage, all_questions=all_questions,
+                           user_answers=sorted_user_answers, zip=zip)
 
 ### admin things ###
 
