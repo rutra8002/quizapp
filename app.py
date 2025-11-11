@@ -2,9 +2,13 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
 import random
-
+from google import genai
+from dotenv import load_dotenv
+import re
+import os
 
 db = SQLAlchemy()
+load_dotenv()
 
 class Question:
     def __init__(self, id, question, answer):
@@ -18,13 +22,16 @@ class QuizApp(Flask):
         self.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///questions.db'
         db.init_app(self)
 
-        self.correct_answers = 0
-        self.wrong_answers = 0
         self.questions_list = []
         self.questions_loaded = False
 
         self.user_answers = []
 
+        self.total_points = 0
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        self.genai_client = genai.Client(api_key = api_key)
+        self.model_name = "gemini-2.5-flash"
         # bind routes to bound instance methods
         self.add_url_rule('/', view_func=self.index)
         self.add_url_rule('/quiz/<table_name>', view_func=self.quiz)
@@ -43,9 +50,8 @@ class QuizApp(Flask):
     def index(self):
         self.questions_list = []
         self.questions_loaded = False
-        self.correct_answers = 0
-        self.wrong_answers = 0
         self.user_answers = []
+        self.total_points = 0
         inspector = inspect(db.engine)
         table_names = inspector.get_table_names()
         return render_template('index.html', table_names=table_names)
@@ -58,7 +64,7 @@ class QuizApp(Flask):
         if total_questions == 0:
             return redirect(url_for('quiz_completed'))
         question = random.choice(self.questions_list)
-        return render_template('quiz.html', question=question.question, table_name=table_name, correct_answers=self.correct_answers, total_questions=total_questions)
+        return render_template('quiz.html', question=question.question, table_name=table_name, total_points=self.total_points, total_questions=total_questions)
 
     def answer(self):
         question_text = request.form['question']
@@ -66,11 +72,24 @@ class QuizApp(Flask):
         table_name = request.form['table_name']
         question = next((q for q in self.questions_list if q.question == question_text), None)
         if question:
-            self.user_answers.append({'question': question_text, 'answer': answer_text})
-            if question.answer == answer_text:
-                self.correct_answers += 1
-            else:
-                self.wrong_answers += 1
+            # score with Gemini against the reference answer from DB
+            ref_answer = question.answer
+            score = self._score_with_gemini(question_text, ref_answer, answer_text)
+            score = max(0, min(10, score))  # clamp safety
+            score_label = f"{score}/10"
+
+            # record and update totals
+            self.user_answers.append({
+                'question': question_text,
+                'answer': answer_text,
+                'expected': ref_answer,
+                'score': score,
+                'score_label': score_label
+            })
+            self.total_points += score
+
+
+            # remove asked question
             self.questions_list.remove(question)
 
         if len(self.questions_list) == 0:
@@ -78,9 +97,8 @@ class QuizApp(Flask):
         return redirect(url_for('quiz', table_name=table_name))
 
     def quiz_completed(self):
-        total_attempts = self.correct_answers + self.wrong_answers
-        correct_percentage = round((self.correct_answers / total_attempts) * 100, 2) if total_attempts > 0 else 0
-        wrong_percentage = (self.wrong_answers / total_attempts) * 100 if total_attempts > 0 else 0
+        total_attempts = len(self.user_answers)
+
         inspector = inspect(db.engine)
         table_names = inspector.get_table_names()
         all_questions = []
@@ -89,13 +107,22 @@ class QuizApp(Flask):
             for q in questions:
                 all_questions.append(Question(q.id, q.question, q.answer))
 
-        # Sort user_answers based on the order of all_questions
-        sorted_user_answers = [next(ua['answer'] for ua in self.user_answers if ua['question'] == q.question) for q in all_questions]
+        answers_by_q = {ua['question']: ua['answer'] for ua in self.user_answers}
+        sorted_user_answers = [answers_by_q.get(q.question, "") for q in all_questions]
 
-        return render_template('quiz_completed.html', correct_percentage=correct_percentage,
-                               wrong_percentage=wrong_percentage, all_questions=all_questions,
-                               user_answers=sorted_user_answers, zip=zip)
+        max_points = total_attempts * 10
+        total_points = self.total_points
 
+        return render_template(
+            'quiz_completed.html',
+            all_questions=all_questions,
+            user_answers=sorted_user_answers,  # legacy
+            # new fields for points display
+            total_points=total_points,
+            max_points=max_points,
+            attempted_answers=self.user_answers,  # contains score and score_label per question
+            zip=zip
+        )
     ### admin things ###
 
     def admin(self):
@@ -134,6 +161,40 @@ class QuizApp(Flask):
         db.session.execute(text(f'DELETE FROM {table_name} WHERE id = :id'), {'id': question_id})
         db.session.commit()
         return redirect(url_for('edit_table', table_name=table_name))
+
+        # --- internal helpers ---
+
+    def _score_with_gemini(self, question_text: str, ref_answer: str, user_answer: str) -> int:
+        """
+        Ask Gemini to grade the user's answer 0-10.
+        Returns an int in [0,10]. Falls back to exact match if no client configured.
+        """
+        # Fallback if API key not configured
+        if not self.genai_client:
+            return 10 if user_answer.strip().lower() == str(ref_answer).strip().lower() else 0
+
+        prompt = (
+            "You are a strict grader. Grade the user's answer to the question against the reference answer.\n"
+            "- Return only a single integer from 0 to 10 inclusive.\n"
+            "- 0 means completely incorrect, 10 means fully correct.\n"
+            f"Question: {question_text}\n"
+            f"Reference answer: {ref_answer}\n"
+            f"User answer: {user_answer}\n"
+            "Score (0-10):"
+        )
+        try:
+            resp = self.genai_client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
+            raw = (resp.text or "").strip()
+            # extract first integer in response
+            m = re.search(r'(-?\d+)', raw)
+            score = int(m.group(1)) if m else 0
+        except Exception as e:
+            print(e)
+            score = 0
+        return max(0, min(10, score))
 
 
 app = QuizApp(__name__)

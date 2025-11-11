@@ -1,33 +1,62 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Quiz Completed</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="utf-8" />
+  <title>Quiz completed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold">Quiz Completed</h1>
-        <div class="radial-progress" style="--value:{{ correct_percentage }};" role="progressbar">{{ correct_percentage }}%</div>
+<body class="bg-gray-50 text-gray-900">
+  <div class="mx-auto max-w-5xl p-6">
+    <header class="mb-6">
+      <h1 class="text-2xl font-semibold tracking-tight">Quiz completed</h1>
+    </header>
 
-        <h2 class="text-xl font-bold mt-4">All Questions and Answers</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for question, user_answer in zip(all_questions, user_answers) %}
-                <div class="card shadow-lg">
-                    <div class="card-body">
-                        <h2 class="card-title">Question</h2>
-                        <p>{{ question.question }}</p>
-                        <h2 class="card-title">Your Answer</h2>
-                        <p>{{ user_answer }}</p>
-                        <h2 class="card-title">Correct Answer</h2>
-                        <p>{{ question.answer }}</p>
-                    </div>
-                </div>
-            {% endfor %}
+    <section class="mb-6">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="inline-flex items-center gap-2 rounded-md bg-gray-50 px-3 py-1.5 text-sm text-gray-700 ring-1 ring-inset ring-gray-200">
+          <span class="font-medium">Total points</span>
+          <span class="font-medium"><strong>{{ total_points }}</strong> / {{ max_points }}</span>
         </div>
+      </div>
+    </section>
 
-        <a href="{{ url_for('index') }}" class="btn btn-primary mt-4">Retry</a>
+    {% if attempted_answers and attempted_answers|length > 0 %}
+      <section>
+        <h2 class="mb-3 text-lg font-medium">Your answers and scores</h2>
+        <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="w-[35%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Question</th>
+                <th scope="col" class="w-[30%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Your answer</th>
+                <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Reference</th>
+                <th scope="col" class="w-[10%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Score</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+              {% for item in attempted_answers %}
+                <tr class="align-top">
+                  <td class="px-4 py-3 text-sm text-gray-900">{{ item.question }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ item.answer }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ item.expected }}</td>
+                  <td class="px-4 py-3 text-sm font-semibold text-gray-900">{{ item.score_label }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% else %}
+      <p class="mt-2 text-sm text-gray-600">No answers were submitted.</p>
+    {% endif %}
+
+    <div class="mt-8">
+      <a class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+         href="{{ url_for('index') }}">
+        Back to start
+      </a>
     </div>
+  </div>
 </body>
 </html>
