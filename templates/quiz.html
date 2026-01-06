@@ -28,6 +28,7 @@
             {% for i in range(answer_lines) %}
               <input
                 type="text"
+                autocomplete="off"
                 name="answer_{{ i }}"
                 placeholder="Answer {{ i + 1 }}"
                 class="input input-bordered w-full max-w-xl mb-2"
@@ -37,6 +38,7 @@
           {% else %}
             <input
               type="text"
+              autocomplete="off"
               name="answer"
               placeholder="Your answer"
               class="input input-bordered w-full max-w-xl"
