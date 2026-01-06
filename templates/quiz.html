@@ -24,13 +24,25 @@
           <input type="hidden" name="question" value="{{ question }}" />
           <input type="hidden" name="table_name" value="{{ table_name }}" />
 
-          <input
-            type="text"
-            name="answer"
-            placeholder="Your answer"
-            class="input input-bordered w-full max-w-xl"
-            autofocus
-          />
+          {% if answer_lines and answer_lines > 1 %}
+            {% for i in range(answer_lines) %}
+              <input
+                type="text"
+                name="answer_{{ i }}"
+                placeholder="Answer {{ i + 1 }}"
+                class="input input-bordered w-full max-w-xl mb-2"
+                {% if i == 0 %}autofocus{% endif %}
+              />
+            {% endfor %}
+          {% else %}
+            <input
+              type="text"
+              name="answer"
+              placeholder="Your answer"
+              class="input input-bordered w-full max-w-xl"
+              autofocus
+            />
+          {% endif %}
 
           <button type="submit" class="btn btn-primary mt-3">Submit</button>
         </form>

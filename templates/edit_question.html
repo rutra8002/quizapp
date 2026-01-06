@@ -12,6 +12,7 @@
         <form action="{{ url_for('edit_question', table_name=table_name, question_id=question.id) }}" method="post">
             <input type="text" name="question" value="{{ question.question }}" class="input input-bordered w-full max-w-xs">
             <input type="text" name="answer" value="{{ question.answer }}" class="input input-bordered w-full max-w-xs mt-2">
+            <input type="number" name="answer_lines" value="{{ question.answer_lines if question.answer_lines else 1 }}" min="1" class="input input-bordered w-full max-w-xs mt-2">
             <button type="submit" class="btn btn-primary mt-2">Save Changes</button>
         </form>
     </div>
