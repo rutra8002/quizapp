@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Quiz App{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <header class="border-b border-gray-200 bg-white">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+            <a href="{{ url_for('index') }}" class="text-lg font-semibold">Quiz App</a>
+            <div class="flex items-center gap-2">
+                {% if current_user %}
+                    <span class="text-sm">{{ current_user.username }}</span>
+                    <form action="{{ url_for('logout') }}" method="post" class="inline">
+                        <button type="submit" class="btn btn-sm">Log out</button>
+                    </form>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-sm btn-ghost">Login</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-sm btn-primary">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4 space-y-2">
+                    {% for category, message in messages %}
+                        {% set alert_class = 'alert-error' if category == 'error' else 'alert-success' %}
+                        <div class="alert {{ alert_class }}">
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
+

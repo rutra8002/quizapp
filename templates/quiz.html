@@ -1,55 +1,45 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-  <meta charset="UTF-8" />
-  <title>Question</title>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .stats-badge { position: absolute; top: 10px; right: 10px; }
-  </style>
-</head>
-<body>
-  <div class="stats-badge">
-    <div class="badge badge-primary">Points: {{ total_points }} | Questions left {{ total_questions }}</div>
+{% extends "base.html" %}
+
+{% block title %}Question{% endblock %}
+
+{% block content %}
+<div class="mb-3 flex justify-end">
+  <div class="badge badge-primary">Points: {{ total_points }} | Questions left {{ total_questions }}</div>
+</div>
+
+<div class="card shadow-lg bg-white">
+  <div class="card-body">
+    <h1 class="card-title text-2xl">Question</h1>
+    <p class="mt-1">{{ question }}</p>
+
+    <form action="{{ url_for('answer') }}" method="post" class="mt-4">
+      <input type="hidden" name="question" value="{{ question }}" />
+      <input type="hidden" name="table_name" value="{{ table_name }}" />
+
+      {% if answer_lines and answer_lines > 1 %}
+        {% for i in range(answer_lines) %}
+          <input
+            type="text"
+            autocomplete="off"
+            name="answer_{{ i }}"
+            placeholder="Answer {{ i + 1 }}"
+            class="input input-bordered w-full max-w-xl mb-2"
+            {% if i == 0 %}autofocus{% endif %}
+          />
+        {% endfor %}
+      {% else %}
+        <input
+          type="text"
+          autocomplete="off"
+          name="answer"
+          placeholder="Your answer"
+          class="input input-bordered w-full max-w-xl"
+          autofocus
+        />
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary mt-3">Submit</button>
+    </form>
   </div>
-
-  <div class="container mx-auto p-4">
-    <div class="card shadow-lg">
-      <div class="card-body">
-        <h1 class="card-title text-2xl">Question</h1>
-        <p class="mt-1">{{ question }}</p>
-
-        <form action="{{ url_for('answer') }}" method="post" class="mt-4">
-          <input type="hidden" name="question" value="{{ question }}" />
-          <input type="hidden" name="table_name" value="{{ table_name }}" />
-
-          {% if answer_lines and answer_lines > 1 %}
-            {% for i in range(answer_lines) %}
-              <input
-                type="text"
-                autocomplete="off"
-                name="answer_{{ i }}"
-                placeholder="Answer {{ i + 1 }}"
-                class="input input-bordered w-full max-w-xl mb-2"
-                {% if i == 0 %}autofocus{% endif %}
-              />
-            {% endfor %}
-          {% else %}
-            <input
-              type="text"
-              autocomplete="off"
-              name="answer"
-              placeholder="Your answer"
-              class="input input-bordered w-full max-w-xl"
-              autofocus
-            />
-          {% endif %}
-
-          <button type="submit" class="btn btn-primary mt-3">Submit</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+</div>
+{% endblock %}

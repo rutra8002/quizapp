@@ -4,9 +4,18 @@ from sqlalchemy import Column, Integer, MetaData, Table, Text, inspect, select
 from ..models import db, get_table, is_valid_table_name
 
 
+def _is_quiz_table(table_name: str) -> bool:
+    inspector = inspect(db.engine)
+    column_names = {column["name"] for column in inspector.get_columns(table_name)}
+    return {"question", "answer"}.issubset(column_names)
+
+
 def _get_table_or_abort(table_name: str):
     try:
-        return get_table(table_name)
+        table = get_table(table_name)
+        if not _is_quiz_table(table_name):
+            abort(404)
+        return table
     except ValueError:
         abort(400)
     except LookupError:
@@ -15,13 +24,15 @@ def _get_table_or_abort(table_name: str):
 
 def admin():
     inspector = inspect(db.engine)
-    table_names = inspector.get_table_names()
+    table_names = [name for name in inspector.get_table_names() if _is_quiz_table(name)]
     return render_template("admin.html", table_names=table_names)
 
 
 def create_table():
     table_name = request.form["table_name"]
     if not is_valid_table_name(table_name):
+        abort(400)
+    if table_name == "users":
         abort(400)
 
     metadata = MetaData()

@@ -6,9 +6,26 @@ from sqlalchemy import inspect, select
 from ..models import db, get_table
 
 
+def _reset_quiz_state() -> None:
+    current_app.questions_list = []
+    current_app.questions_loaded = False
+    current_app.active_quiz_table = None
+    current_app.user_answers = []
+    current_app.total_points = 0
+
+
+def _is_quiz_table(table_name: str) -> bool:
+    inspector = inspect(db.engine)
+    column_names = {column["name"] for column in inspector.get_columns(table_name)}
+    return {"question", "answer"}.issubset(column_names)
+
+
 def _get_table_or_abort(table_name: str):
     try:
-        return get_table(table_name)
+        table = get_table(table_name)
+        if not _is_quiz_table(table_name):
+            abort(404)
+        return table
     except ValueError:
         abort(400)
     except LookupError:
@@ -16,21 +33,23 @@ def _get_table_or_abort(table_name: str):
 
 
 def index():
-    current_app.questions_list = []
-    current_app.questions_loaded = False
-    current_app.user_answers = []
-    current_app.total_points = 0
+    _reset_quiz_state()
 
     inspector = inspect(db.engine)
-    table_names = inspector.get_table_names()
+    table_names = [name for name in inspector.get_table_names() if _is_quiz_table(name)]
     return render_template("index.html", table_names=table_names)
 
 
 def quiz(table_name):
+    is_new_table = current_app.active_quiz_table != table_name
+    if is_new_table:
+        _reset_quiz_state()
+
     if not current_app.questions_loaded:
         table = _get_table_or_abort(table_name)
         current_app.questions_list = db.session.execute(select(table)).all()
         current_app.questions_loaded = True
+        current_app.active_quiz_table = table_name
 
     total_questions = len(current_app.questions_list)
     if total_questions == 0:
