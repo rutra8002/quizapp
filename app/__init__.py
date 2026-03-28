@@ -3,9 +3,9 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 
+from .errors import register_error_handlers
 from .models import db
 from .routes.auth import register_auth_routes
-from .routes.admin import register_admin_routes
 from .routes.quiz import register_quiz_routes
 from .services.ai_grader import AIGrader
 
@@ -37,6 +37,6 @@ def create_app(config_overrides=None):
 
     register_auth_routes(app)
     register_quiz_routes(app)
-    register_admin_routes(app)
+    register_error_handlers(app)
     return app
 
