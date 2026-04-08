@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -13,12 +14,14 @@ class AuthRoutesTestCase(unittest.TestCase):
         os.close(fd)
         fd, cls._users_db_file = tempfile.mkstemp(prefix="quizapp_auth_users_", suffix=".db")
         os.close(fd)
+        cls._user_quiz_db_dir = tempfile.mkdtemp(prefix="quizapp_auth_user_quiz_")
 
         cls.app = create_app(
             {
                 "TESTING": True,
                 "SQLALCHEMY_DATABASE_URI": f"sqlite:///{cls._quiz_db_file}",
                 "SQLALCHEMY_BINDS": {"auth": f"sqlite:///{cls._users_db_file}"},
+                "USER_QUIZ_DB_DIR": cls._user_quiz_db_dir,
                 "SECRET_KEY": "test-secret",
             }
         )
@@ -35,6 +38,7 @@ class AuthRoutesTestCase(unittest.TestCase):
             os.remove(cls._quiz_db_file)
         if os.path.exists(cls._users_db_file):
             os.remove(cls._users_db_file)
+        shutil.rmtree(cls._user_quiz_db_dir, ignore_errors=True)
 
     def setUp(self):
         self.client = self.app.test_client()
@@ -43,7 +47,7 @@ class AuthRoutesTestCase(unittest.TestCase):
             db.drop_all()
             db.create_all()
 
-    def _register(self, username="alice", password="secret123", follow_redirects=True):
+    def _register(self, username="jeff", password="secret123", follow_redirects=True):
         return self.client.post(
             "/register",
             data={
@@ -54,7 +58,7 @@ class AuthRoutesTestCase(unittest.TestCase):
             follow_redirects=follow_redirects,
         )
 
-    def _login(self, username="alice", password="secret123", follow_redirects=True):
+    def _login(self, username="jeff", password="secret123", follow_redirects=True):
         return self.client.post(
             "/login",
             data={
@@ -69,11 +73,11 @@ class AuthRoutesTestCase(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("alice", body)
+        self.assertIn("jeff", body)
         self.assertIn("Log out", body)
 
         with self.app.app_context():
-            user = User.query.filter_by(username="alice").first()
+            user = User.query.filter_by(username="jeff").first()
             self.assertIsNotNone(user)
             self.assertTrue(user.check_password("secret123"))
 
@@ -93,7 +97,7 @@ class AuthRoutesTestCase(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("alice", body)
+        self.assertIn("jeff", body)
         self.assertIn("Log out", body)
 
     def test_login_invalid_credentials_returns_401(self):
@@ -113,7 +117,7 @@ class AuthRoutesTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Login", body)
-        self.assertNotIn("alice", body)
+        self.assertNotIn("jeff", body)
 
     def test_login_page_redirects_if_already_authenticated(self):
         self._register(follow_redirects=False)

@@ -1,8 +1,7 @@
 import os
+import shutil
 import tempfile
 import unittest
-
-from sqlalchemy import inspect
 
 from app import create_app
 from app.models import db
@@ -15,12 +14,14 @@ class AdminAccessTestCase(unittest.TestCase):
         os.close(fd)
         fd, cls._users_db_file = tempfile.mkstemp(prefix="quizapp_admin_users_", suffix=".db")
         os.close(fd)
+        cls._user_quiz_db_dir = tempfile.mkdtemp(prefix="quizapp_admin_user_quiz_")
 
         cls.app = create_app(
             {
                 "TESTING": True,
                 "SQLALCHEMY_DATABASE_URI": f"sqlite:///{cls._quiz_db_file}",
                 "SQLALCHEMY_BINDS": {"auth": f"sqlite:///{cls._users_db_file}"},
+                "USER_QUIZ_DB_DIR": cls._user_quiz_db_dir,
                 "SECRET_KEY": "test-secret",
             }
         )
@@ -37,6 +38,7 @@ class AdminAccessTestCase(unittest.TestCase):
             os.remove(cls._quiz_db_file)
         if os.path.exists(cls._users_db_file):
             os.remove(cls._users_db_file)
+        shutil.rmtree(cls._user_quiz_db_dir, ignore_errors=True)
 
     def setUp(self):
         self.client = self.app.test_client()
@@ -73,9 +75,9 @@ class AdminAccessTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.headers["Location"].endswith("/admin"))
 
-        with self.app.app_context():
-            table_names = inspect(db.engine).get_table_names()
-            self.assertIn("public_quiz", table_names)
+        admin_page = self.client.get("/admin", follow_redirects=True)
+        self.assertEqual(admin_page.status_code, 200)
+        self.assertIn("public_quiz", admin_page.get_data(as_text=True))
 
 
 if __name__ == "__main__":

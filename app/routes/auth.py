@@ -31,6 +31,7 @@ def login():
             flash("Invalid username or password.", "error")
             return render_template("login.html", username=username), 401
 
+        session.pop("quiz_state", None)
         session["user_id"] = user.id
         flash("Logged in successfully.", "success")
         return redirect(url_for("index"))
@@ -73,6 +74,7 @@ def register():
         db.session.add(user)
         db.session.commit()
 
+        session.pop("quiz_state", None)
         session["user_id"] = user.id
         flash("Registration successful.", "success")
         return redirect(url_for("index"))
@@ -82,6 +84,7 @@ def register():
 
 def logout():
     session.pop("user_id", None)
+    session.pop("quiz_state", None)
     flash("Logged out.", "success")
     return redirect(url_for("index"))
 

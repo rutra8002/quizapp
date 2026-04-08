@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -13,12 +14,14 @@ class ErrorPagesTestCase(unittest.TestCase):
         os.close(fd)
         fd, cls._users_db_file = tempfile.mkstemp(prefix="quizapp_error_users_", suffix=".db")
         os.close(fd)
+        cls._user_quiz_db_dir = tempfile.mkdtemp(prefix="quizapp_error_user_quiz_")
 
         cls.app = create_app(
             {
                 "TESTING": True,
                 "SQLALCHEMY_DATABASE_URI": f"sqlite:///{cls._quiz_db_file}",
                 "SQLALCHEMY_BINDS": {"auth": f"sqlite:///{cls._users_db_file}"},
+                "USER_QUIZ_DB_DIR": cls._user_quiz_db_dir,
                 "SECRET_KEY": "test-secret",
             }
         )
@@ -35,6 +38,7 @@ class ErrorPagesTestCase(unittest.TestCase):
             os.remove(cls._quiz_db_file)
         if os.path.exists(cls._users_db_file):
             os.remove(cls._users_db_file)
+        shutil.rmtree(cls._user_quiz_db_dir, ignore_errors=True)
 
     def setUp(self):
         self.client = self.app.test_client()
@@ -44,7 +48,8 @@ class ErrorPagesTestCase(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 404)
-        self.assertIn("Custom Error Page", body)
+        self.assertIn("<title>404 - Not Found</title>", body)
+        self.assertIn("Not Found", body)
         self.assertIn("404", body)
         self.assertIn("Back to Home", body)
 
@@ -53,7 +58,8 @@ class ErrorPagesTestCase(unittest.TestCase):
         body = response.get_data(as_text=True)
 
         self.assertEqual(response.status_code, 405)
-        self.assertIn("Custom Error Page", body)
+        self.assertIn("<title>405 - Method Not Allowed</title>", body)
+        self.assertIn("Method Not Allowed", body)
         self.assertIn("405", body)
         self.assertIn("Back to Home", body)
 

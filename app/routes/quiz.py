@@ -1,35 +1,75 @@
+import os
 import random
+from pathlib import Path
 
-from flask import abort, current_app, g, redirect, render_template, request, url_for
-from sqlalchemy import Column, Integer, MetaData, Table, Text, inspect, select
+from flask import abort, current_app, g, redirect, render_template, request, session, url_for
+from sqlalchemy import Column, Integer, MetaData, Table, Text, create_engine, inspect, select
 
-from ..models import db, get_table, is_valid_table_name
+from ..models import is_valid_table_name
 
 
 def _reset_quiz_state() -> None:
-    current_app.questions_list = []
-    current_app.questions_loaded = False
-    current_app.active_quiz_table = None
-    current_app.user_answers = []
-    current_app.total_points = 0
+    session["quiz_state"] = {
+        "active_quiz_table": None,
+        "remaining_question_ids": [],
+        "user_answers": [],
+        "total_points": 0,
+    }
+    session.modified = True
 
 
-def _is_quiz_table(table_name: str) -> bool:
-    inspector = inspect(db.engine)
+def _get_quiz_state() -> dict:
+    state = session.get("quiz_state")
+    if not isinstance(state, dict):
+        _reset_quiz_state()
+        return session["quiz_state"]
+
+    state.setdefault("active_quiz_table", None)
+    state.setdefault("remaining_question_ids", [])
+    state.setdefault("user_answers", [])
+    state.setdefault("total_points", 0)
+    return state
+
+
+def _save_quiz_state(state: dict) -> None:
+    session["quiz_state"] = state
+    session.modified = True
+
+
+def _get_user_engine():
+    user = g.get("current_user")
+    if user is None:
+        abort(401)
+
+    base_dir = current_app.config.get("USER_QUIZ_DB_DIR", current_app.instance_path)
+    os.makedirs(base_dir, exist_ok=True)
+    db_path = Path(base_dir) / f"quiz_user_{user.id}.db"
+    return create_engine(f"sqlite:///{db_path.as_posix()}")
+
+
+def _is_quiz_table(engine, table_name: str) -> bool:
+    inspector = inspect(engine)
     column_names = {column["name"] for column in inspector.get_columns(table_name)}
     return {"question", "answer"}.issubset(column_names)
 
 
-def _get_table_or_abort(table_name: str):
-    try:
-        table = get_table(table_name)
-        if not _is_quiz_table(table_name):
-            abort(404)
-        return table
-    except ValueError:
+def _list_user_quiz_tables(engine) -> list[str]:
+    inspector = inspect(engine)
+    return [name for name in inspector.get_table_names() if _is_quiz_table(engine, name)]
+
+
+def _get_table_or_abort(engine, table_name: str):
+    if not is_valid_table_name(table_name):
         abort(400)
-    except LookupError:
+
+    inspector = inspect(engine)
+    if table_name not in inspector.get_table_names():
         abort(404)
+
+    if not _is_quiz_table(engine, table_name):
+        abort(404)
+
+    return Table(table_name, MetaData(), autoload_with=engine)
 
 
 def _require_login():
@@ -39,43 +79,78 @@ def _require_login():
 
 
 def index():
-    _reset_quiz_state()
+    login_redirect = _require_login()
+    if login_redirect is not None:
+        return login_redirect
 
-    inspector = inspect(db.engine)
-    table_names = [name for name in inspector.get_table_names() if _is_quiz_table(name)]
+    _reset_quiz_state()
+    engine = _get_user_engine()
+    table_names = _list_user_quiz_tables(engine)
     return render_template("index.html", table_names=table_names)
 
 
 def quiz(table_name):
-    is_new_table = current_app.active_quiz_table != table_name
+    login_redirect = _require_login()
+    if login_redirect is not None:
+        return login_redirect
+
+    engine = _get_user_engine()
+    state = _get_quiz_state()
+
+    is_new_table = state["active_quiz_table"] != table_name
     if is_new_table:
-        _reset_quiz_state()
+        state = {
+            "active_quiz_table": table_name,
+            "remaining_question_ids": [],
+            "user_answers": [],
+            "total_points": 0,
+        }
 
-    if not current_app.questions_loaded:
-        table = _get_table_or_abort(table_name)
-        current_app.questions_list = db.session.execute(select(table)).all()
-        current_app.questions_loaded = True
-        current_app.active_quiz_table = table_name
+    if not state["remaining_question_ids"]:
+        table = _get_table_or_abort(engine, table_name)
+        with engine.connect() as connection:
+            question_ids = [row.id for row in connection.execute(select(table.c.id)).all()]
+        state["remaining_question_ids"] = question_ids
+        state["active_quiz_table"] = table_name
+        _save_quiz_state(state)
 
-    total_questions = len(current_app.questions_list)
+    total_questions = len(state["remaining_question_ids"])
     if total_questions == 0:
         return redirect(url_for("quiz_completed"))
 
-    question = random.choice(current_app.questions_list)
-    answer_lines = question.answer_lines
+    question_id = random.choice(state["remaining_question_ids"])
+    table = _get_table_or_abort(engine, table_name)
+    with engine.connect() as connection:
+        question = connection.execute(select(table).where(table.c.id == question_id)).first()
+
+    if question is None:
+        state["remaining_question_ids"] = [qid for qid in state["remaining_question_ids"] if qid != question_id]
+        _save_quiz_state(state)
+        return redirect(url_for("quiz", table_name=table_name))
+
+    answer_lines = question.answer_lines or 1
     return render_template(
         "quiz.html",
         question=question.question,
+        question_id=question.id,
         table_name=table_name,
-        total_points=current_app.total_points,
+        total_points=state["total_points"],
         total_questions=total_questions,
         answer_lines=answer_lines,
     )
 
 
 def answer():
-    question_text = request.form["question"]
-    table_name = request.form["table_name"]
+    login_redirect = _require_login()
+    if login_redirect is not None:
+        return login_redirect
+
+    table_name = request.form.get("table_name", "")
+    question_id_raw = request.form.get("question_id", "")
+    try:
+        question_id = int(question_id_raw)
+    except (TypeError, ValueError):
+        abort(400)
 
     if "answer_0" in request.form:
         answers = []
@@ -87,40 +162,60 @@ def answer():
             index_value += 1
         answer_text = "\n".join(answers)
     else:
-        answer_text = request.form["answer"]
+        answer_text = request.form.get("answer", "")
 
-    question = next((item for item in current_app.questions_list if item.question == question_text), None)
-    if question:
-        ref_answer = question.answer
-        score = current_app.ai_grader.score(question_text, ref_answer, answer_text)
-        score_label = f"{score}/10"
+    state = _get_quiz_state()
+    if state.get("active_quiz_table") != table_name:
+        abort(400)
 
-        current_app.user_answers.append(
-            {
-                "question": question_text,
-                "answer": answer_text,
-                "expected": ref_answer,
-                "score": score,
-                "score_label": score_label,
-            }
-        )
-        current_app.total_points += score
-        current_app.questions_list.remove(question)
+    remaining_ids = state.get("remaining_question_ids", [])
+    if question_id not in remaining_ids:
+        abort(400)
 
-    if len(current_app.questions_list) == 0:
+    engine = _get_user_engine()
+    table = _get_table_or_abort(engine, table_name)
+    with engine.connect() as connection:
+        question = connection.execute(select(table).where(table.c.id == question_id)).first()
+
+    if question is None:
+        abort(404)
+
+    ref_answer = question.answer
+    score = current_app.ai_grader.score(question.question, ref_answer, answer_text)
+    score_label = f"{score}/10"
+
+    state["user_answers"].append(
+        {
+            "question": question.question,
+            "answer": answer_text,
+            "expected": ref_answer,
+            "score": score,
+            "score_label": score_label,
+        }
+    )
+    state["total_points"] += score
+    state["remaining_question_ids"] = [qid for qid in remaining_ids if qid != question_id]
+    _save_quiz_state(state)
+
+    if len(state["remaining_question_ids"]) == 0:
         return redirect(url_for("quiz_completed"))
     return redirect(url_for("quiz", table_name=table_name))
 
 
 def quiz_completed():
-    total_attempts = len(current_app.user_answers)
+    login_redirect = _require_login()
+    if login_redirect is not None:
+        return login_redirect
+
+    state = _get_quiz_state()
+    total_attempts = len(state["user_answers"])
     max_points = total_attempts * 10
 
     return render_template(
         "quiz_completed.html",
-        total_points=current_app.total_points,
+        total_points=state["total_points"],
         max_points=max_points,
-        attempted_answers=current_app.user_answers,
+        attempted_answers=state["user_answers"],
     )
 
 
@@ -129,8 +224,8 @@ def admin():
     if login_redirect is not None:
         return login_redirect
 
-    inspector = inspect(db.engine)
-    table_names = [name for name in inspector.get_table_names() if _is_quiz_table(name)]
+    engine = _get_user_engine()
+    table_names = _list_user_quiz_tables(engine)
     return render_template("admin.html", table_names=table_names)
 
 
@@ -145,6 +240,7 @@ def create_table():
     if table_name == "users":
         abort(400)
 
+    engine = _get_user_engine()
     metadata = MetaData()
     quiz_table = Table(
         table_name,
@@ -154,7 +250,7 @@ def create_table():
         Column("answer", Text),
         Column("answer_lines", Integer, nullable=False, default=1),
     )
-    metadata.create_all(db.engine, tables=[quiz_table], checkfirst=True)
+    metadata.create_all(engine, tables=[quiz_table], checkfirst=True)
     return redirect(url_for("admin"))
 
 
@@ -163,8 +259,10 @@ def edit_table(table_name):
     if login_redirect is not None:
         return login_redirect
 
-    table = _get_table_or_abort(table_name)
-    questions = db.session.execute(select(table)).all()
+    engine = _get_user_engine()
+    table = _get_table_or_abort(engine, table_name)
+    with engine.connect() as connection:
+        questions = connection.execute(select(table)).all()
     return render_template("edit_table.html", table_name=table_name, questions=questions)
 
 
@@ -175,11 +273,17 @@ def add_question(table_name):
 
     question = request.form["question"]
     answer = request.form["answer"]
-    answer_lines = int(request.form.get("answer_lines", 1))
+    try:
+        answer_lines = int(request.form.get("answer_lines", 1))
+    except (TypeError, ValueError):
+        abort(400)
+    if answer_lines < 1:
+        abort(400)
 
-    table = _get_table_or_abort(table_name)
-    db.session.execute(table.insert().values(question=question, answer=answer, answer_lines=answer_lines))
-    db.session.commit()
+    engine = _get_user_engine()
+    table = _get_table_or_abort(engine, table_name)
+    with engine.begin() as connection:
+        connection.execute(table.insert().values(question=question, answer=answer, answer_lines=answer_lines))
     return redirect(url_for("edit_table", table_name=table_name))
 
 
@@ -188,21 +292,30 @@ def edit_question(table_name, question_id):
     if login_redirect is not None:
         return login_redirect
 
-    table = _get_table_or_abort(table_name)
+    engine = _get_user_engine()
+    table = _get_table_or_abort(engine, table_name)
     if request.method == "POST":
         new_question = request.form["question"]
         new_answer = request.form["answer"]
-        answer_lines = int(request.form.get("answer_lines", 1))
+        try:
+            answer_lines = int(request.form.get("answer_lines", 1))
+        except (TypeError, ValueError):
+            abort(400)
+        if answer_lines < 1:
+            abort(400)
 
-        db.session.execute(
-            table.update()
-            .where(table.c.id == question_id)
-            .values(question=new_question, answer=new_answer, answer_lines=answer_lines)
-        )
-        db.session.commit()
+        with engine.begin() as connection:
+            connection.execute(
+                table.update()
+                .where(table.c.id == question_id)
+                .values(question=new_question, answer=new_answer, answer_lines=answer_lines)
+            )
         return redirect(url_for("edit_table", table_name=table_name))
 
-    question = db.session.execute(select(table).where(table.c.id == question_id)).first()
+    with engine.connect() as connection:
+        question = connection.execute(select(table).where(table.c.id == question_id)).first()
+    if question is None:
+        abort(404)
     return render_template("edit_question.html", table_name=table_name, question=question)
 
 
@@ -211,9 +324,10 @@ def delete_question(table_name, question_id):
     if login_redirect is not None:
         return login_redirect
 
-    table = _get_table_or_abort(table_name)
-    db.session.execute(table.delete().where(table.c.id == question_id))
-    db.session.commit()
+    engine = _get_user_engine()
+    table = _get_table_or_abort(engine, table_name)
+    with engine.begin() as connection:
+        connection.execute(table.delete().where(table.c.id == question_id))
     return redirect(url_for("edit_table", table_name=table_name))
 
 
