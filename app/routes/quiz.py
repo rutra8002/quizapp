@@ -42,6 +42,10 @@ def _get_user_engine():
         abort(401)
 
     base_dir = current_app.config.get("USER_QUIZ_DB_DIR", current_app.instance_path)
+    if current_app.config.get("TESTING") and os.path.abspath(str(base_dir)) == os.path.abspath(current_app.instance_path):
+        base_dir = os.path.abspath(
+            os.path.join(os.path.dirname(current_app.root_path), "tests", ".tmp_user_quiz_dbs")
+        )
     os.makedirs(base_dir, exist_ok=True)
     db_path = Path(base_dir) / f"quiz_user_{user.id}.db"
     return create_engine(f"sqlite:///{db_path.as_posix()}")

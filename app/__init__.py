@@ -22,6 +22,12 @@ def create_app(config_overrides=None):
     app.config["USER_QUIZ_DB_DIR"] = app.instance_path
     if config_overrides:
         app.config.update(config_overrides)
+
+    has_custom_user_db_dir = bool(config_overrides and "USER_QUIZ_DB_DIR" in config_overrides)
+    if app.config.get("TESTING") and not has_custom_user_db_dir:
+        app.config["USER_QUIZ_DB_DIR"] = os.path.abspath(
+            os.path.join(os.path.dirname(app.root_path), "tests", ".tmp_user_quiz_dbs")
+        )
     db.init_app(app)
 
     with app.app_context():
