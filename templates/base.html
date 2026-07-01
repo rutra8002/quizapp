@@ -27,6 +27,12 @@
     </header>
 
     <main class="mx-auto max-w-6xl p-4">
+        {% if not config.GEMINI_API_KEY_CONFIGURED %}
+            <div class="alert alert-warning mb-4">
+                <span>Gemini API key is not configured. AI grading is disabled, so answers will be graded with the fallback logic.</span>
+            </div>
+        {% endif %}
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="mb-4 space-y-2">
