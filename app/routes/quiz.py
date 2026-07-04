@@ -2,10 +2,11 @@ import os
 import random
 from pathlib import Path
 
-from flask import abort, current_app, g, redirect, render_template, request, session, url_for
+from flask import abort, current_app, flash, g, redirect, render_template, request, session, url_for
 from sqlalchemy import Column, Integer, MetaData, Table, Text, create_engine, inspect, select
 
 from ..models import is_valid_table_name
+from ..services.ai_grader import AIModelUnavailableError
 
 
 def _reset_quiz_state() -> None:
@@ -185,7 +186,14 @@ def answer():
         abort(404)
 
     ref_answer = question.answer
-    score = current_app.ai_grader.score(question.question, ref_answer, answer_text)
+    try:
+        score = current_app.ai_grader.score(question.question, ref_answer, answer_text)
+    except AIModelUnavailableError:
+        flash(
+            "AI grading service is temporarily unavailable. Your answer was graded using fallback logic.",
+            "error",
+        )
+        score = 10 if answer_text.strip().lower() == str(ref_answer).strip().lower() else 0
     score_label = f"{score}/10"
 
     state["user_answers"].append(

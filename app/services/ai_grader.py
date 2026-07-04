@@ -3,6 +3,10 @@ import re
 from google import genai
 
 
+class AIModelUnavailableError(Exception):
+    """Raised when the AI model/service is temporarily unavailable (HTTP 503)."""
+
+
 class AIGrader:
     def __init__(self, api_key: str | None, model_name: str = "gemini-2.5-flash"):
         self.model_name = model_name
@@ -32,6 +36,10 @@ class AIGrader:
             match = re.search(r"(-?\d+)", raw)
             score = int(match.group(1)) if match else 0
         except Exception as error:
+            msg = str(error) or ""
+            status_code = getattr(error, "status_code", None)
+            if status_code == 503:
+                raise AIModelUnavailableError(msg)
             print(error)
             score = 0
 
