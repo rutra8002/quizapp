@@ -9,39 +9,39 @@
 </header>
 
 {% if attempts and attempts|length > 0 %}
-  <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+  <div class="overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-sm">
+    <table class="min-w-full divide-y divide-base-300">
+      <thead class="bg-base-200">
         <tr>
-          <th scope="col" class="w-[35%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Test Name</th>
-          <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Score</th>
-          <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Percentage</th>
-          <th scope="col" class="w-[15%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+          <th scope="col" class="w-[35%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Test Name</th>
+          <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Score</th>
+          <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Percentage</th>
+          <th scope="col" class="w-[15%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Date</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100 bg-white">
+      <tbody class="divide-y divide-base-300/60 bg-base-100">
         {% for attempt in attempts %}
-          <tr class="hover:bg-gray-50 cursor-pointer">
-            <td class="px-4 py-3 text-sm text-gray-900">
-              <a href="{{ url_for('test_details', attempt_id=attempt.id) }}" class="text-blue-600 hover:text-blue-800 font-medium">
+          <tr class="hover:bg-base-200 cursor-pointer">
+            <td class="px-4 py-3 text-sm text-base-content">
+              <a href="{{ url_for('test_details', attempt_id=attempt.id) }}" class="link link-primary font-medium">
                 {{ attempt.test_name }}
               </a>
             </td>
-            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ attempt.score }} / {{ attempt.max_score }}</td>
-            <td class="px-4 py-3 text-sm text-gray-700">
-              <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium {% if attempt.score / attempt.max_score >= 0.8 %}bg-green-50 text-green-700{% elif attempt.score / attempt.max_score >= 0.6 %}bg-yellow-50 text-yellow-700{% else %}bg-red-50 text-red-700{% endif %}">
+            <td class="px-4 py-3 text-sm font-medium text-base-content">{{ attempt.score }} / {{ attempt.max_score }}</td>
+            <td class="px-4 py-3 text-sm text-base-content/80">
+              <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium {% if attempt.score / attempt.max_score >= 0.8 %}bg-success/15 text-success{% elif attempt.score / attempt.max_score >= 0.6 %}bg-warning/15 text-warning{% else %}bg-error/15 text-error{% endif %}">
                 {{ (attempt.score / attempt.max_score * 100)|int }}%
               </span>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-600">{{ attempt.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="px-4 py-3 text-sm text-base-content/60">{{ attempt.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 {% else %}
-  <div class="rounded-lg border border-gray-200 bg-gray-50 p-6">
-    <p class="text-center text-gray-600">No test attempts yet. <a href="{{ url_for('index') }}" class="text-blue-600 hover:text-blue-800 font-medium">Start a quiz</a> to create your first test attempt.</p>
+  <div class="rounded-lg border border-base-300 bg-base-200 p-6">
+    <p class="text-center text-base-content/60">No test attempts yet. <a href="{{ url_for('index') }}" class="link link-primary font-medium">Start a quiz</a> to create your first test attempt.</p>
   </div>
 {% endif %}
 {% endblock %}

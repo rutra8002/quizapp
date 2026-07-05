@@ -3,13 +3,13 @@
 {% block title %}{{ status_code }} - {{ title }}{% endblock %}
 
 {% block content %}
-<div class="hero bg-white rounded-lg border border-gray-200">
+<div class="hero bg-base-100 rounded-lg border border-base-300">
     <div class="hero-content text-center py-12">
         <div class="max-w-xl">
 
             <h1 class="text-5xl font-bold mt-2">{{ status_code }}</h1>
             <h2 class="text-2xl font-semibold mt-3">{{ title }}</h2>
-            <p class="py-4 text-gray-600">{{ description }}</p>
+            <p class="py-4 text-base-content/60">{{ description }}</p>
             <div class="flex items-center justify-center gap-2">
                 <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
                 {% if not current_user %}

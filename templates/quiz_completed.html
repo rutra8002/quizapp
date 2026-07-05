@@ -9,7 +9,7 @@
 
 <section class="mb-6">
   <div class="flex flex-wrap items-center gap-3">
-    <div class="inline-flex items-center gap-2 rounded-md bg-gray-50 px-3 py-1.5 text-sm text-gray-700 ring-1 ring-inset ring-gray-200">
+    <div class="inline-flex items-center gap-2 rounded-md bg-base-200 px-3 py-1.5 text-sm text-base-content/80 ring-1 ring-inset ring-base-300">
       <span class="font-medium">Total points</span>
       <span class="font-medium"><strong>{{ total_points }}</strong> / {{ max_points }}</span>
     </div>
@@ -19,23 +19,23 @@
 {% if attempted_answers and attempted_answers|length > 0 %}
   <section>
     <h2 class="mb-3 text-lg font-medium">Your answers and scores</h2>
-    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-sm">
+      <table class="min-w-full divide-y divide-base-300">
+        <thead class="bg-base-200">
           <tr>
-            <th scope="col" class="w-[35%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Question</th>
-            <th scope="col" class="w-[30%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Your answer</th>
-            <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Reference</th>
-            <th scope="col" class="w-[10%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Score</th>
+            <th scope="col" class="w-[35%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Question</th>
+            <th scope="col" class="w-[30%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Your answer</th>
+            <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Reference</th>
+            <th scope="col" class="w-[10%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Score</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 bg-white">
+        <tbody class="divide-y divide-base-300/60 bg-base-100">
           {% for item in attempted_answers %}
             <tr class="align-top">
-              <td class="px-4 py-3 text-sm text-gray-900">{{ item.question }}</td>
-              <td class="px-4 py-3 text-sm text-gray-700">{{ item.answer }}</td>
-              <td class="px-4 py-3 text-sm text-gray-700">{{ item.expected }}</td>
-              <td class="px-4 py-3 text-sm font-semibold text-gray-900">{{ item.score_label }}</td>
+              <td class="px-4 py-3 text-sm text-base-content">{{ item.question }}</td>
+              <td class="px-4 py-3 text-sm text-base-content/80">{{ item.answer }}</td>
+              <td class="px-4 py-3 text-sm text-base-content/80">{{ item.expected }}</td>
+              <td class="px-4 py-3 text-sm font-semibold text-base-content">{{ item.score_label }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -43,16 +43,14 @@
     </div>
   </section>
 {% else %}
-  <p class="mt-2 text-sm text-gray-600">No answers were submitted.</p>
+  <p class="mt-2 text-sm text-base-content/60">No answers were submitted.</p>
 {% endif %}
 
 <div class="mt-8 flex gap-4">
-  <a class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-     href="{{ url_for('index') }}">
+  <a class="btn btn-primary" href="{{ url_for('index') }}">
     Back to start
   </a>
-  <a class="inline-flex items-center rounded-md bg-slate-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
-     href="{{ url_for('test_history') }}">
+  <a class="btn btn-neutral" href="{{ url_for('test_history') }}">
     View Test History
   </a>
 </div>

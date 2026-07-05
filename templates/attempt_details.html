@@ -12,15 +12,15 @@
 
 <section class="mb-6">
   <div class="flex flex-wrap items-center gap-3">
-    <div class="inline-flex items-center gap-2 rounded-md bg-gray-50 px-3 py-1.5 text-sm text-gray-700 ring-1 ring-inset ring-gray-200">
+    <div class="inline-flex items-center gap-2 rounded-md bg-base-200 px-3 py-1.5 text-sm text-base-content/80 ring-1 ring-inset ring-base-300">
       <span class="font-medium">Total Score</span>
       <span class="font-medium"><strong>{{ attempt.score }}</strong> / {{ attempt.max_score }}</span>
     </div>
-    <div class="inline-flex items-center gap-2 rounded-md bg-gray-50 px-3 py-1.5 text-sm text-gray-700 ring-1 ring-inset ring-gray-200">
+    <div class="inline-flex items-center gap-2 rounded-md bg-base-200 px-3 py-1.5 text-sm text-base-content/80 ring-1 ring-inset ring-base-300">
       <span class="font-medium">Percentage</span>
-      <span class="font-medium {% if attempt.score / attempt.max_score >= 0.8 %}text-green-600{% elif attempt.score / attempt.max_score >= 0.6 %}text-yellow-600{% else %}text-red-600{% endif %}"><strong>{{ attempt.to_dict()['percentage'] }}%</strong></span>
+      <span class="font-medium {% if attempt.score / attempt.max_score >= 0.8 %}text-success{% elif attempt.score / attempt.max_score >= 0.6 %}text-warning{% else %}text-error{% endif %}"><strong>{{ attempt.to_dict()['percentage'] }}%</strong></span>
     </div>
-    <div class="inline-flex items-center gap-2 rounded-md bg-gray-50 px-3 py-1.5 text-sm text-gray-700 ring-1 ring-inset ring-gray-200">
+    <div class="inline-flex items-center gap-2 rounded-md bg-base-200 px-3 py-1.5 text-sm text-base-content/80 ring-1 ring-inset ring-base-300">
       <span class="font-medium">Attempt Date</span>
       <span class="font-medium">{{ attempt.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
     </div>
@@ -30,27 +30,27 @@
 {% if answers and answers|length > 0 %}
   <section>
     <h2 class="mb-3 text-lg font-medium">Your Answers and Scores</h2>
-    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="overflow-hidden rounded-lg border border-base-300 bg-base-100 shadow-sm">
+      <table class="min-w-full divide-y divide-base-300">
+        <thead class="bg-base-200">
           <tr>
-            <th scope="col" class="w-[35%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Question</th>
-            <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Your Answer</th>
-            <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Reference</th>
-            <th scope="col" class="w-[10%] px-4 py-3 text-left text-sm font-semibold text-gray-700">Score</th>
+            <th scope="col" class="w-[35%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Question</th>
+            <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Your Answer</th>
+            <th scope="col" class="w-[25%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Reference</th>
+            <th scope="col" class="w-[10%] px-4 py-3 text-left text-sm font-semibold text-base-content/80">Score</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 bg-white">
+        <tbody class="divide-y divide-base-300/60 bg-base-100">
           {% for item in answers %}
-            <tr class="align-top hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm text-gray-900">{{ item.question }}</td>
-              <td class="px-4 py-3 text-sm text-gray-700">
+            <tr class="align-top hover:bg-base-200">
+              <td class="px-4 py-3 text-sm text-base-content">{{ item.question }}</td>
+              <td class="px-4 py-3 text-sm text-base-content/80">
                 <div class="max-h-24 overflow-y-auto">{{ item.answer }}</div>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-700">
+              <td class="px-4 py-3 text-sm text-base-content/80">
                 <div class="max-h-24 overflow-y-auto">{{ item.expected }}</div>
               </td>
-              <td class="px-4 py-3 text-sm font-semibold text-gray-900">{{ item.score_label }}</td>
+              <td class="px-4 py-3 text-sm font-semibold text-base-content">{{ item.score_label }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -58,11 +58,11 @@
     </div>
   </section>
 {% else %}
-  <p class="mt-2 text-sm text-gray-600">No answers were submitted.</p>
+  <p class="mt-2 text-sm text-base-content/60">No answers were submitted.</p>
 {% endif %}
 
 <div class="mt-8">
-  <a href="{{ url_for('test_history') }}" class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+  <a href="{{ url_for('test_history') }}" class="btn btn-primary">
     Back to History
   </a>
 </div>

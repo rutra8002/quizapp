@@ -6,13 +6,32 @@
     <title>{% block title %}Quiz App{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Apply saved theme before paint to avoid a flash of the wrong theme
+        (function () {
+            const saved = localStorage.getItem('theme');
+            const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     {% block head_extra %}{% endblock %}
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <header class="border-b border-gray-200 bg-white">
+<body class="bg-base-200 text-base-content">
+    <header class="border-b border-base-300 bg-base-100">
         <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <a href="{{ url_for('index') }}" class="text-lg font-semibold">Quiz App</a>
             <div class="flex items-center gap-2">
+                <button id="theme-toggle" type="button" class="btn btn-sm btn-ghost btn-circle" aria-label="Toggle dark mode">
+                    <!-- Sun icon (shown in dark mode, click to go light) -->
+                    <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                    </svg>
+                    <!-- Moon icon (shown in light mode, click to go dark) -->
+                    <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
                 {% if current_user %}
                     <span class="text-sm">{{ current_user.username }}</span>
                     <form action="{{ url_for('logout') }}" method="post" class="inline">
@@ -48,6 +67,34 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    <script>
+        (function () {
+            const root = document.documentElement;
+            const sunIcon = document.getElementById('theme-icon-sun');
+            const moonIcon = document.getElementById('theme-icon-moon');
+            const toggleBtn = document.getElementById('theme-toggle');
+
+            function updateIcons(theme) {
+                if (theme === 'dark') {
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                } else {
+                    moonIcon.classList.remove('hidden');
+                    sunIcon.classList.add('hidden');
+                }
+            }
+
+            updateIcons(root.getAttribute('data-theme'));
+
+            toggleBtn.addEventListener('click', function () {
+                const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                const next = current === 'dark' ? 'light' : 'dark';
+                root.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                updateIcons(next);
+            });
+        })();
+    </script>
 </body>
 </html>
-

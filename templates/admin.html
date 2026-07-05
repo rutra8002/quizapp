@@ -15,13 +15,13 @@
         title="Use letters, numbers, and underscores only; must start with a letter or underscore."
         spellcheck="false"
     >
-    <p class="mt-1 text-sm text-gray-500">Format: start with a letter or underscore, then letters, numbers, or underscores.</p>
+    <p class="mt-1 text-sm text-base-content/60">Format: start with a letter or underscore, then letters, numbers, or underscores.</p>
     <button type="submit" class="btn btn-primary mt-2">Create Table</button>
 </form>
 <h2 class="text-xl font-bold mb-4">Existing Tables</h2>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     {% for table_name in table_names %}
-        <div class="card shadow-lg bg-white">
+        <div class="card shadow-lg bg-base-100">
             <div class="card-body">
                 <h2 class="card-title">{{ table_name }}</h2>
                 <a href="{{ url_for('edit_table', table_name=table_name) }}" class="btn btn-primary mt-2">Edit Table</a>

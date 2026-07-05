@@ -12,7 +12,7 @@
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     {% for table_name in table_names %}
-        <div class="card shadow-lg bg-white">
+        <div class="card shadow-lg bg-base-100">
             <div class="card-body">
                 <h2 class="card-title">{{ table_name }}</h2>
                 <a href="{{ url_for('quiz', table_name=table_name) }}" class="btn btn-primary mt-2">Start Quiz</a>
