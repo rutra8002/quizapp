@@ -1,11 +1,12 @@
 import os
 import random
+import json
 from pathlib import Path
 
 from flask import abort, current_app, flash, g, redirect, render_template, request, session, url_for
 from sqlalchemy import Column, Integer, MetaData, Table, Text, create_engine, inspect, select
 
-from ..models import is_valid_table_name
+from ..models import is_valid_table_name, db, TestAttempt
 from ..services.ai_grader import AIModelUnavailableError
 
 
@@ -222,6 +223,19 @@ def quiz_completed():
     state = _get_quiz_state()
     total_attempts = len(state["user_answers"])
     max_points = total_attempts * 10
+    table_name = state.get("active_quiz_table", "Unknown")
+    user = g.get("current_user")
+
+    if user and state["user_answers"]:
+        attempt = TestAttempt(
+            user_id=user.id,
+            test_name=table_name,
+            score=state["total_points"],
+            max_score=max_points,
+            answers=json.dumps(state["user_answers"]),
+        )
+        db.session.add(attempt)
+        db.session.commit()
 
     return render_template(
         "quiz_completed.html",
@@ -239,6 +253,30 @@ def admin():
     engine = _get_user_engine()
     table_names = _list_user_quiz_tables(engine)
     return render_template("admin.html", table_names=table_names)
+
+
+def test_history():
+    login_redirect = _require_login()
+    if login_redirect is not None:
+        return login_redirect
+
+    user = g.get("current_user")
+    attempts = TestAttempt.query.filter_by(user_id=user.id).order_by(TestAttempt.created_at.desc()).all()
+    return render_template("test_history.html", attempts=attempts)
+
+
+def test_details(attempt_id):
+    login_redirect = _require_login()
+    if login_redirect is not None:
+        return login_redirect
+
+    user = g.get("current_user")
+    attempt = TestAttempt.query.filter_by(id=attempt_id, user_id=user.id).first()
+    if attempt is None:
+        abort(404)
+
+    answers = json.loads(attempt.answers)
+    return render_template("attempt_details.html", attempt=attempt, answers=answers)
 
 
 def create_table():
@@ -348,6 +386,8 @@ def register_quiz_routes(app):
     app.add_url_rule("/quiz/<table_name>", view_func=quiz)
     app.add_url_rule("/answer", view_func=answer, methods=["POST"])
     app.add_url_rule("/end_screen", view_func=quiz_completed)
+    app.add_url_rule("/history", view_func=test_history)
+    app.add_url_rule("/history/<int:attempt_id>", view_func=test_details)
     app.add_url_rule("/admin", view_func=admin)
     app.add_url_rule("/admin/create_table", view_func=create_table, methods=["POST"])
     app.add_url_rule("/admin/edit_table/<table_name>", view_func=edit_table)
