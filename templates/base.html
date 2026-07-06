@@ -19,7 +19,25 @@
 <body class="bg-base-200 text-base-content">
     <header class="border-b border-base-300 bg-base-100">
         <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-            <a href="{{ url_for('index') }}" class="text-lg font-semibold">Quiz App</a>
+            <div class="flex items-center gap-6">
+                <a href="{{ url_for('index') }}" class="text-lg font-semibold">Quiz App</a>
+                <nav class="flex items-center gap-4 text-sm">
+                    <a href="{{ url_for('index') }}"
+                       class="{% if request.endpoint == 'index' %}text-primary font-semibold{% else %}text-base-content/60 hover:text-base-content{% endif %}">
+                        Home
+                    </a>
+                    {% if current_user %}
+                        <a href="{{ url_for('test_history') }}"
+                           class="{% if request.endpoint in ['test_history', 'test_details'] %}text-primary font-semibold{% else %}text-base-content/60 hover:text-base-content{% endif %}">
+                            History
+                        </a>
+                        <a href="{{ url_for('admin') }}"
+                           class="{% if request.endpoint in ['admin', 'edit_table', 'create_table', 'add_question', 'edit_question', 'delete_question'] %}text-primary font-semibold{% else %}text-base-content/60 hover:text-base-content{% endif %}">
+                            Admin
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
             <div class="flex items-center gap-2">
                 <button id="theme-toggle" type="button" class="btn btn-sm btn-ghost btn-circle" aria-label="Toggle dark mode">
                     <!-- Sun icon (shown in dark mode, click to go light) -->
