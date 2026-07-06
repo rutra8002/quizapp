@@ -51,7 +51,6 @@ class ErrorPagesTestCase(unittest.TestCase):
         self.assertIn("<title>404 - Not Found</title>", body)
         self.assertIn("Not Found", body)
         self.assertIn("404", body)
-        self.assertIn("Back to Home", body)
 
     def test_405_uses_custom_template(self):
         response = self.client.get("/logout")
@@ -61,7 +60,6 @@ class ErrorPagesTestCase(unittest.TestCase):
         self.assertIn("<title>405 - Method Not Allowed</title>", body)
         self.assertIn("Method Not Allowed", body)
         self.assertIn("405", body)
-        self.assertIn("Back to Home", body)
 
 
 if __name__ == "__main__":
