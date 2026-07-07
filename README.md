@@ -11,6 +11,11 @@ An AI-powered quiz application built with Flask and Google Gemini API for intell
 - User authentication and session management
 - SQLite database for persistence
 
+### Here are some screenshots of the app:
+
+[![Screenshot 1](docs/1.png)](docs/1.png)
+[![Screenshot 2](docs/2.png)](docs/2.png)
+
 ## Requirements
 
 - Docker
