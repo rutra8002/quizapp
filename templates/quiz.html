@@ -1,45 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Question{% endblock %}
+{% block title %}Question - Quiz{% endblock %}
 
 {% block content %}
-<div class="mb-3 flex justify-end">
-  <div class="badge badge-primary">Points: {{ total_points }} | Questions left {{ total_questions }}</div>
-</div>
+<div class="max-w-2xl mx-auto space-y-6">
 
-<div class="card shadow-lg bg-base-100">
-  <div class="card-body">
-    <h1 class="card-title text-2xl">Question</h1>
-    <p class="mt-1">{{ question }}</p>
+    <div class="stats shadow w-full bg-base-100 border border-base-200">
+        <div class="stat place-items-center">
+            <div class="stat-title text-xs font-semibold uppercase tracking-wider">Remaining</div>
+            <div class="stat-value text-secondary text-2xl">{{ total_questions }}</div>
+        </div>
+    </div>
 
-    <form action="{{ url_for('answer') }}" method="post" class="mt-4">
-      <input type="hidden" name="question_id" value="{{ question_id }}" />
-      <input type="hidden" name="table_name" value="{{ table_name }}" />
+    <div class="card bg-base-100 shadow-xl border border-base-200">
+        <div class="card-body gap-4">
+            <div>
+                <span class="text-xs uppercase font-bold tracking-widest text-primary block mb-1">Question</span>
+                <h1 class="text-xl md:text-2xl font-bold text-base-content whitespace-pre-line">
+                    {{ question }}
+                </h1>
+            </div>
 
-      {% if answer_lines and answer_lines > 1 %}
-        {% for i in range(answer_lines) %}
-          <input
-            type="text"
-            autocomplete="off"
-            name="answer_{{ i }}"
-            placeholder="Answer {{ i + 1 }}"
-            class="input input-bordered w-full max-w-xl mb-2"
-            {% if i == 0 %}autofocus{% endif %}
-          />
-        {% endfor %}
-      {% else %}
-        <input
-          type="text"
-          autocomplete="off"
-          name="answer"
-          placeholder="Your answer"
-          class="input input-bordered w-full max-w-xl"
-          autofocus
-        />
-      {% endif %}
+            <hr class="border-base-200" />
 
-      <button type="submit" class="btn btn-primary mt-3">Submit</button>
-    </form>
-  </div>
+            <form action="{{ url_for('answer') }}" method="post" class="space-y-4">
+                <input type="hidden" name="question_id" value="{{ question_id }}" />
+                <input type="hidden" name="table_name" value="{{ table_name }}" />
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/60">Type your response below. Press Enter for new lines.</span>
+                    </label>
+
+                    <textarea
+                        name="answer"
+                        placeholder="Write your answer here..."
+                        rows="4"
+                        required
+                        autofocus
+                        autocomplete="off"
+                        class="textarea textarea-bordered textarea-primary w-full text-base focus:outline-none"
+                    ></textarea>
+                </div>
+
+                <div class="card-actions justify-end mt-2">
+                    <button type="submit" class="btn btn-primary px-8 gap-2">
+                        Submit Answer
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -158,17 +158,7 @@ def answer():
     except (TypeError, ValueError):
         abort(400)
 
-    if "answer_0" in request.form:
-        answers = []
-        index_value = 0
-        while f"answer_{index_value}" in request.form:
-            answer_part = request.form[f"answer_{index_value}"].strip()
-            if answer_part:
-                answers.append(answer_part)
-            index_value += 1
-        answer_text = "\n".join(answers)
-    else:
-        answer_text = request.form.get("answer", "")
+    answer_text = request.form.get("answer", "").strip()
 
     state = _get_quiz_state()
     if state.get("active_quiz_table") != table_name:
