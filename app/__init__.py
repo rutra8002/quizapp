@@ -36,7 +36,7 @@ def create_app(config_overrides=None):
 
     api_key = os.getenv("GEMINI_API_KEY")
     app.config["GEMINI_API_KEY_CONFIGURED"] = bool(api_key and api_key.strip())
-    app.ai_grader = AIGrader(api_key=api_key, model_name="gemini-2.5-flash")
+    app.ai_grader = AIGrader(api_key=api_key, model_name="gemini-3-flash-preview")
 
     register_auth_routes(app)
     register_quiz_routes(app)
