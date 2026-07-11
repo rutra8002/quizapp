@@ -187,7 +187,7 @@ def answer():
         score = 10 if answer_text.strip().lower() == str(ref_answer).strip().lower() else 0
     except AIRateLimitError:
         flash(
-            "AI grading is rate-limited right now. Your answer was graded using fallback logic — try again shortly.",
+            "AI grading is rate-limited right now. Your answer was graded using fallback logic - try again shortly.",
             "error",
         )
         score = 10 if answer_text.strip().lower() == str(ref_answer).strip().lower() else 0
