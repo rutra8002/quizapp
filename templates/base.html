@@ -72,14 +72,20 @@
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="mb-4 space-y-2">
+                <div class="toast toast-top toast-end z-50" id="flash-toast">
                     {% for category, message in messages %}
                         {% set alert_class = 'alert-error' if category == 'error' else 'alert-success' %}
-                        <div class="alert {{ alert_class }}">
+                        <div class="alert {{ alert_class }} shadow-lg">
                             <span>{{ message }}</span>
                         </div>
                     {% endfor %}
                 </div>
+                <script>
+                    setTimeout(function () {
+                        var toast = document.getElementById('flash-toast');
+                        if (toast) toast.remove();
+                    }, 6000);
+                </script>
             {% endif %}
         {% endwith %}
 

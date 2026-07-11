@@ -6,6 +6,13 @@ from google import genai
 class AIModelUnavailableError(Exception):
     """Raised when the AI model/service is temporarily unavailable (HTTP 503)."""
 
+class AIModelUnavailableError(Exception):
+    """Raised when the AI model/service is temporarily unavailable (HTTP 503)."""
+
+
+class AIRateLimitError(Exception):
+    """Raised when the AI service quota/rate limit is exceeded (HTTP 429)."""
+
 
 class AIGrader:
     def __init__(self, api_key: str | None, model_name: str = "gemini-3-flash-preview"):
@@ -37,9 +44,11 @@ class AIGrader:
             score = int(match.group(1)) if match else 0
         except Exception as error:
             msg = str(error) or ""
-            status_code = getattr(error, "status_code", None)
+            status_code = getattr(error, "status_code", None) or getattr(error, "code", None)
             if status_code == 503:
                 raise AIModelUnavailableError(msg)
+            if status_code == 429:
+                raise AIRateLimitError(msg)
             print(error)
             score = 0
 

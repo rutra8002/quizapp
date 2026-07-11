@@ -7,7 +7,7 @@ from flask import abort, current_app, flash, g, redirect, render_template, reque
 from sqlalchemy import Column, Integer, MetaData, Table, Text, create_engine, inspect, select
 
 from ..models import is_valid_table_name, db, TestAttempt
-from ..services.ai_grader import AIModelUnavailableError
+from ..services.ai_grader import AIModelUnavailableError, AIRateLimitError
 
 
 def _reset_quiz_state() -> None:
@@ -182,6 +182,12 @@ def answer():
     except AIModelUnavailableError:
         flash(
             "AI grading service is temporarily unavailable. Your answer was graded using fallback logic.",
+            "error",
+        )
+        score = 10 if answer_text.strip().lower() == str(ref_answer).strip().lower() else 0
+    except AIRateLimitError:
+        flash(
+            "AI grading is rate-limited right now. Your answer was graded using fallback logic — try again shortly.",
             "error",
         )
         score = 10 if answer_text.strip().lower() == str(ref_answer).strip().lower() else 0
