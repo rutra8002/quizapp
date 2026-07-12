@@ -43,5 +43,5 @@ SECRET_KEY=your_secret_key
 ## Stack
 - Backend: Flask
 - Database: SQLAlchemy + SQLite
-- AI: Google Gemini 3.5 Flash
+- AI: Google Gemini 3 Flash
 - Deployment: Docker
