@@ -4,14 +4,10 @@ from google import genai
 
 
 class AIModelUnavailableError(Exception):
-    """Raised when the AI model/service is temporarily unavailable (HTTP 503)."""
-
-class AIModelUnavailableError(Exception):
-    """Raised when the AI model/service is temporarily unavailable (HTTP 503)."""
-
+    """Raised when the AI model is temporarily unavailable (HTTP 503)."""
 
 class AIRateLimitError(Exception):
-    """Raised when the AI service quota/rate limit is exceeded (HTTP 429)."""
+    """Raised when the AI service rate limit is exceeded (HTTP 429)."""
 
 
 class AIGrader:
@@ -22,7 +18,6 @@ class AIGrader:
     def score(self, question_text: str, ref_answer: str, user_answer: str) -> int:
         """
         Ask Gemini to grade the user's answer 0-10.
-        Returns an int in [0, 10]. Falls back to exact match if no API client is configured.
         """
         if not self.client:
             return 10 if user_answer.strip().lower() == str(ref_answer).strip().lower() else 0
